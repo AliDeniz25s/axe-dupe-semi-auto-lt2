@@ -1,0 +1,258 @@
+-- Dupe Axe V4 GUI (Integrated Loop with Button Timer & Exact UI Style)
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+if playerGui:FindFirstChild("DupeAxeGui") then
+    playerGui.DupeAxeGui:Destroy()
+end
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DupeAxeGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 290) -- Slightly taller to fit the loop button nicely
+mainFrame.Position = UDim2.new(0.5, -125, 0.4, -120)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+-- Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -30, 0, 35)
+titleLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "dupe axe v4"
+titleLabel.TextSize = 16
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Parent = mainFrame
+
+-- Delete Button
+local deleteButton = Instance.new("TextButton")
+deleteButton.Size = UDim2.new(0, 30, 0, 35)
+deleteButton.Position = UDim2.new(1, -30, 0, 0)
+deleteButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+deleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+deleteButton.Text = "X"
+deleteButton.TextSize = 16
+deleteButton.Font = Enum.Font.SourceSansBold
+deleteButton.Parent = mainFrame
+
+deleteButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Instruction Label para sa Slot
+local instructLabel = Instance.new("TextLabel")
+instructLabel.Size = UDim2.new(0.9, 0, 0, 30)
+instructLabel.Position = UDim2.new(0.05, 0, 0.15, 0)
+instructLabel.BackgroundTransparency = 1
+instructLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+instructLabel.Text = "enter your number slot to dupe or reload"
+instructLabel.TextSize = 11
+instructLabel.TextWrapped = true
+instructLabel.Font = Enum.Font.SourceSansItalic
+instructLabel.Parent = mainFrame
+
+-- Text Box para sa Slot Number
+local slotTextBox = Instance.new("TextBox")
+slotTextBox.Size = UDim2.new(0.8, 0, 0, 30)
+slotTextBox.Position = UDim2.new(0.1, 0, 0.28, 0)
+slotTextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+slotTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+slotTextBox.Text = ""
+slotTextBox.PlaceholderText = "Slot #"
+slotTextBox.TextSize = 14
+slotTextBox.Font = Enum.Font.SourceSans
+slotTextBox.Parent = mainFrame
+
+-- Main Action Button (May 1 min cooldown timer dito)
+local actionButton = Instance.new("TextButton")
+actionButton.Size = UDim2.new(0.8, 0, 0, 35)
+actionButton.Position = UDim2.new(0.1, 0, 0.43, 0)
+actionButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+actionButton.Text = "Void & Reload Base"
+actionButton.TextSize = 14
+actionButton.Font = Enum.Font.SourceSansBold
+actionButton.Parent = mainFrame
+
+-- Auto Dupe Loop Button
+local autoLoopButton = Instance.new("TextButton")
+autoLoopButton.Size = UDim2.new(0.8, 0, 0, 35)
+autoLoopButton.Position = UDim2.new(0.1, 0, 0.58, 0)
+autoLoopButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+autoLoopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoLoopButton.Text = "Auto Dupe Loop: OFF"
+autoLoopButton.TextSize = 14
+autoLoopButton.Font = Enum.Font.SourceSansBold
+autoLoopButton.Parent = mainFrame
+
+-- TP Base Button
+local tpBaseButton = Instance.new("TextButton")
+tpBaseButton.Size = UDim2.new(0.8, 0, 0, 35)
+tpBaseButton.Position = UDim2.new(0.1, 0, 0.73, 0)
+tpBaseButton.BackgroundColor3 = Color3.fromRGB(46, 139, 87)
+tpBaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpBaseButton.Text = "TP Base"
+tpBaseButton.TextSize = 14
+tpBaseButton.Font = Enum.Font.SourceSansBold
+tpBaseButton.Parent = mainFrame
+
+-- Cooldown Badge
+local badgeLabel = Instance.new("TextLabel")
+badgeLabel.Size = UDim2.new(0, 180, 0, 30)
+badgeLabel.Position = UDim2.new(0.5, -90, 0, -40)
+badgeLabel.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+badgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+badgeLabel.Text = "your on cooldown"
+badgeLabel.TextSize = 13
+badgeLabel.Font = Enum.Font.SourceSansBold
+badgeLabel.Visible = false
+badgeLabel.Parent = mainFrame
+
+-- Cooldown at Action Logic
+local deb = false
+local cooldownDuration = 60
+local isAutoLooping = false
+
+local function showCooldownBadge()
+    badgeLabel.Visible = true
+    task.wait(1.5)
+    badgeLabel.Visible = false
+end
+
+local function executeDupeAction()
+    if deb then
+        task.spawn(showCooldownBadge)
+        return false
+    end
+    
+    local slotNum = tonumber(slotTextBox.Text)
+    if not slotNum then
+        slotTextBox.Text = ""
+        slotTextBox.PlaceholderText = "Ilagay ang slot number!"
+        if isAutoLooping then
+            isAutoLooping = false
+            autoLoopButton.Text = "Auto Dupe Loop: OFF"
+            autoLoopButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        end
+        return false
+    end
+    
+    deb = true 
+    
+    local char = player.Character
+    if char then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Anchored = false
+            end
+        end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        
+        if root then
+            root.CFrame = CFrame.new(root.Position.X, -350, root.Position.Z)
+        end
+        
+        -- Wait until player dies naturally in the void before sending reload
+        if humanoid then
+            local died = false
+            local connection
+            connection = humanoid.Died:Connect(function()
+                died = true
+                if connection then connection:Disconnect() end
+            end)
+            
+            local startTime = tick()
+            while not died and humanoid.Health > 0 and (tick() - startTime < 15) do
+                task.wait(0.1)
+            end
+            if connection then connection:Disconnect() end
+        else
+            task.wait(3.5)
+        end
+    end
+    
+    local loadSaveRequests = game:GetService("ReplicatedStorage"):FindFirstChild("LoadSaveRequests")
+    if loadSaveRequests and loadSaveRequests:FindFirstChild("RequestLoad") then
+        pcall(function()
+            loadSaveRequests.RequestLoad:InvokeServer(slotNum)
+        end)
+    end
+    
+    -- Cooldown timer displayed directly on the action button
+    local originalText = actionButton.Text
+    actionButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    
+    for i = cooldownDuration, 0, -1 do
+        actionButton.Text = "Wait: " .. i .. "s"
+        task.wait(1)
+    end
+    
+    actionButton.Text = originalText
+    actionButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    deb = false 
+    return true
+end
+
+-- Background auto loop routine
+task.spawn(function()
+    while true do
+        if isAutoLooping and not deb then
+            pcall(executeDupeAction)
+        else
+            task.wait(0.5)
+        end
+    end
+end)
+
+local function getPlayerBasePosition()
+    local properties = game:GetService("Workspace"):FindFirstChild("Properties")
+    if properties then
+        for _, property in pairs(properties:GetChildren()) do
+            local owner = property:FindFirstChild("Owner")
+            if owner and owner.Value == player then
+                local origin = property:FindFirstChild("OriginPart") or property:FindFirstChildWhichIsA("BasePart")
+                if origin then
+                    return origin.CFrame + Vector3.new(0, 5, 0)
+                end
+            end
+        end
+    end
+    return nil
+end
+
+tpBaseButton.MouseButton1Click:Connect(function()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local baseCFrame = getPlayerBasePosition()
+        if baseCFrame then
+            char.HumanoidRootPart.CFrame = baseCFrame
+        else
+            slotTextBox.Text = ""
+            slotTextBox.PlaceholderText = "Base hindi pa handa/loaded!"
+        end
+    end
+end)
+
+actionButton.MouseButton1Click:Connect(function()
+    pcall(executeDupeAction)
+end)
+
+autoLoopButton.MouseButton1Click:Connect(function()
+    isAutoLooping = not isAutoLooping
+    if isAutoLooping then
+        autoLoopButton.Text = "Auto Dupe Loop: ON"
+        autoLoopButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    else
+        autoLoopButton.Text = "Auto Dupe Loop: OFF"
+        autoLoopButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+    end
+end)
